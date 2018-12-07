@@ -1,0 +1,12 @@
+string current_state
+uint8 number_modules
+bool[6] motor_enabled
+int32[6] count_current
+int32[6] count_commanded
+float32[6] control_effort
+float32[6] p
+float32[6] i
+float32[6] d
+bool[6] limit_switch
+uint8[4] ip
+uint8[6] mac
