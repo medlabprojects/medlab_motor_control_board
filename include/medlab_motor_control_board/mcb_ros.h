@@ -31,7 +31,7 @@ class McbRos
 public:
   McbRos();
   ~McbRos();
-  bool init(std::string nodeName);
+  void init(std::string nodeName);
   bool isConnected(void);
   void enableRosControl(bool cmd);
   void enableAllMotors(bool cmd);
@@ -71,6 +71,9 @@ private:
   ros::Subscriber subLimitSwitchEvent_;
 
   bool       connected_; // true after first status message received
+  ros::Timer statusTimer_;
+  double statusTimerInterval_;
+  void callbackStatusTimer(const ros::TimerEvent &e);
   uint       statusRequestsWithoutReply_; // number of requestStatus() calls since last response
   const uint statusRequestsWithoutReplyLimit_; // limit before connected_ is set false and connectionLost() is signaled
 

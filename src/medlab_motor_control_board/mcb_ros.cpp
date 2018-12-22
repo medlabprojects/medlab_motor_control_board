@@ -21,6 +21,7 @@ namespace medlab_motor_control_board {
 
 McbRos::McbRos()
   : connected_(false)
+  , statusTimerInterval_(0.05) // [s] request status at 20 Hz
   , statusRequestsWithoutReply_(0)
   , statusRequestsWithoutReplyLimit_(50)
 {
@@ -36,7 +37,7 @@ McbRos::~McbRos()
   nh_.shutdown();
 }
 
-bool McbRos::init(std::string nodeName)
+void McbRos::init(std::string nodeName)
 {
   nodeName_ = nodeName;
 
@@ -83,6 +84,9 @@ bool McbRos::init(std::string nodeName)
   // setup subLimitSwitchEvent_
   std::string topicLimitSwitchEvent = "/" + nodeName_+ "/limit_switch_event";
   subLimitSwitchEvent_ = nh_.subscribe(topicLimitSwitchEvent.c_str(), 1, &McbRos::callbackSubLimitSwitchEvent, this);
+
+  // start status timer
+  statusTimer_ = nh_.createTimer(ros::Duration(statusTimerInterval_), &McbRos::callbackStatusTimer, this);
 }
 
 void McbRos::enableRosControl(bool cmd)
@@ -203,9 +207,9 @@ bool McbRos::setGains(quint8 motor, double p, double i, double d)
     medlab_motor_control_board::McbGains msg;
 
     msg.motor = motor;
-    msg.p = p;
-    msg.i = i;
-    msg.d = d;
+    msg.p = static_cast<float>(p);
+    msg.i = static_cast<float>(i);
+    msg.d = static_cast<float>(d);
 
     pubSetGains_.publish(msg);
 
@@ -213,6 +217,11 @@ bool McbRos::setGains(quint8 motor, double p, double i, double d)
   }
 
   return success;
+}
+
+void McbRos::callbackStatusTimer(const ros::TimerEvent &e)
+{
+  requestStatus();
 }
 
 double McbRos::getP(uint8_t motor)
