@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0)
 project(medlab_motor_control_board)
 
-add_definitions(-std=c++14)
+add_definitions(-std=c++14) # use C++14
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-find_package(Qt5Core REQUIRED)
+find_package(Qt5Core REQUIRED) # needed for signal/slots in McbRos class
 
 ## Generate messages in the 'msg' folder
 add_message_files(
@@ -36,23 +36,48 @@ generate_messages(
 )
 
 set(${PROJECT_NAME}_SRCS
-  src/medlab_motor_control_board/mcb_ros.cpp
+  src/mcb_ros.cpp
 )
 
 # NOTE: only need to list headers that require moc'ing (i.e. those that inherit QObject)
 set(${PROJECT_NAME}_HDRS
-  include/medlab_motor_control_board/mcb_ros.h
+  include/${PROJECT_NAME}/mcb_ros.h
 )
 
 set(${PROJECT_NAME}_INCLUDE_DIRECTORIES
-  include/medlab_motor_control_board
+  include
+#  include/medlab_motor_control_board
 )
 
+# make /devel/include directory if it doesn't exist yet
 if(NOT EXISTS "${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_INCLUDE_DESTINATION}")
   file(MAKE_DIRECTORY "${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_INCLUDE_DESTINATION}")
 endif()
 
-qt5_wrap_cpp(${PROJECT_NAME}_MOCS ${${PROJECT_NAME}_HDRS})
+# create MOC code for Q_OBJECT classes
+qt5_wrap_cpp(${PROJECT_NAME}_MOCS
+  ${${PROJECT_NAME}_HDRS}
+)
+
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if your package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+  INCLUDE_DIRS
+    ${${PROJECT_NAME}_INCLUDE_DIRECTORIES}
+  LIBRARIES
+    ${PROJECT_NAME}
+  CATKIN_DEPENDS
+    message_runtime
+    std_msgs
+    roscpp
+)
 
 
 ###########
@@ -75,24 +100,33 @@ target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   Qt5::Core
 )
-
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-
-
-add_executable(MotorTestSine src/${PROJECT_NAME}/MotorTestSine.cpp)
-target_link_libraries(MotorTestSine ${catkin_LIBRARIES})
-add_dependencies(MotorTestSine ${PROJECT_NAME}_generate_messages_cpp)
-
-add_executable(MCBHelper src/${PROJECT_NAME}/MCBHelper.cpp)
-target_link_libraries(MCBHelper ${catkin_LIBRARIES})
-add_dependencies(MCBHelper ${PROJECT_NAME}_generate_messages_cpp)
-
-
-catkin_package(
-  INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRECTORIES}
-  LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS message_runtime std_msgs roscpp
+add_dependencies(${PROJECT_NAME}
+  ${PROJECT_NAME}_generate_messages_cpp
+  ${catkin_EXPORTED_TARGETS}
 )
+
+add_executable(MotorTestSine
+  src/MotorTestSine.cpp
+)
+target_link_libraries(MotorTestSine
+  ${catkin_LIBRARIES}
+)
+add_dependencies(MotorTestSine
+  ${PROJECT_NAME}_generate_messages_cpp
+  ${catkin_EXPORTED_TARGETS}
+)
+
+
+add_executable(MCBHelper
+  src/MCBHelper.cpp
+)
+target_link_libraries(MCBHelper
+  ${catkin_LIBRARIES}
+)
+add_dependencies(MCBHelper
+  ${PROJECT_NAME}_generate_messages_cpp
+)
+
 
 #############
 ## Install ##

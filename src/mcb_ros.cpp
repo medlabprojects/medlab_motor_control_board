@@ -1,4 +1,4 @@
-#include "mcb_ros.h"
+#include "medlab_motor_control_board/mcb_ros.h"
 #include <QObject>
 #include <QTimer>
 #include <stdint.h>
