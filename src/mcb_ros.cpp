@@ -17,7 +17,7 @@
 #include "medlab_motor_control_board/McbGains.h"
 
 
-namespace medlab_motor_control_board {
+namespace mcb {
 
 McbRos::McbRos()
   : connected_(false)
@@ -127,7 +127,7 @@ void McbRos::requestStatus()
     // increment counter
     statusRequestsWithoutReply_++;
 
-    if(statusRequestsWithoutReply_ > statusRequestsWithoutReplyLimit_){
+    if(statusRequestsWithoutReply_ == statusRequestsWithoutReplyLimit_){
       connected_ = false;
       emit connectionLost();
     }
