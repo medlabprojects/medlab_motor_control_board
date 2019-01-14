@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 project(medlab_motor_control_board)
 
-add_definitions(-std=c++14) # use C++14
+#add_definitions(-std=c++14) # use C++14
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
