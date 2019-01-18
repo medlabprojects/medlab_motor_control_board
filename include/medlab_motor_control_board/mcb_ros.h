@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <QVector>
 #include <utility>
+#include <array>
 #include <medlab_motor_control_board/McbEncoders.h>
 #include <medlab_motor_control_board/McbEncoderCurrent.h>
 #include <medlab_motor_control_board/McbStatus.h>
@@ -19,7 +20,7 @@ Q_DECLARE_METATYPE(medlab_motor_control_board::McbEncoderCurrent)
 
 namespace mcb {
 // custom types for mapping actuators to individual motors
-using Motor = std::pair<int,int>; // pair of < Motherboard_index, Daughterboard_index >
+using Motor = std::pair<uint8_t,uint8_t>; // pair of < Motherboard_index, Daughterboard_index >
 using MotorMap = std::array< Motor, 7 >;
 
 
@@ -34,14 +35,11 @@ public:
   std::string nodeName(void) {return nodeName_;}
   void init(std::string nodeName);
   bool isConnected(void);
-  void enableRosControl(bool cmd);
-  void enableAllMotors(bool cmd);
-  bool enableMotor(uint8_t motor, bool cmd);
   bool setDesiredPosition(medlab_motor_control_board::McbEncoders desiredPositions);
   bool setDesiredPosition(int motor, qint32 position);
-  bool zeroCurrentPosition(uint8_t motor); // zeroes encoder count of a single motor
-  bool zeroCurrentPositions(void); // zeroes encoder count for all motors
   medlab_motor_control_board::McbEncoderCurrent currentPositions(void) {return encoderCurrent_;}
+  int currentPosition(uint8_t motor) {return encoderCurrent_.measured[motor];} // NOTE: does not check that motor is between 0-5!
+  std::array<bool,6> getCurrentLimitStates(void) {return currentLimitStates_;}
   double getP(uint8_t motor); // returns Kp gain value from the latest status
   double getI(uint8_t motor); // returns Ki gain value from the latest status
   double getD(uint8_t motor); // returns Kd gain value from the latest status
@@ -53,8 +51,14 @@ public:
   bool isMotorEnabled(uint8_t motor);
 
 public slots:
+  void enableRosControl(bool cmd);
+  bool enableMotor(uint8_t motor, bool cmd);
+  void enableAllMotors(bool cmd);
   void requestStatus(void); // for manual use if desired; automatically called by callbackStatusTimer
   bool setGains(quint8 motor, double p, double i, double d);
+  bool zeroCurrentPosition(uint8_t motor); // zeroes encoder count of a single motor
+  bool zeroCurrentPositions(void); // zeroes encoder count for all motors
+  bool resetDacs(void); // re-initializes all DACs (useful if you notice a motor not moving despite being enabled and with a large control effort)
 
 private:
   std::string     nodeName_;
@@ -66,6 +70,7 @@ private:
   ros::Publisher  pubEncoderCommand_;
   ros::Publisher  pubZeroSingle_;
   ros::Publisher  pubZeroAll_;
+  ros::Publisher  pubResetDacs_;
   ros::Publisher  pubSetGains_;
   ros::Subscriber subStatus_;
   ros::Subscriber subEncoderCurrent_;
@@ -81,6 +86,7 @@ private:
   bool currentControlState_; // 0 => ROS Idle; 1 => ROS Control
   medlab_motor_control_board::McbStatus currentStatus_; // most recently received status
   medlab_motor_control_board::McbEncoderCurrent encoderCurrent_; // measured and desired positions
+  std::array<bool,6> currentLimitStates_;
 
   void callbackSubEncoderCurrent(const medlab_motor_control_board::McbEncoderCurrent::ConstPtr& msg);
   void callbackSubStatus(const medlab_motor_control_board::McbStatus::ConstPtr& msg);

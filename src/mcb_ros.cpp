@@ -65,6 +65,10 @@ void McbRos::init(std::string nodeName)
   std::string topicZeroAll = "/" + nodeName_+ "/encoder_zero_all";
   pubZeroAll_ = nh_.advertise<std_msgs::Empty>(topicZeroAll.c_str(),1);
 
+  // setup pubResetDacs_
+  std::string topicResetDacs = "/" + nodeName_+ "/reset_dacs";
+  pubResetDacs_ = nh_.advertise<std_msgs::Empty>(topicResetDacs.c_str(),1);
+
   // setup pubEncoderCommand_
   std::string topicEncoderCommand = "/" + nodeName_+ "/encoder_command";
   pubEncoderCommand_ = nh_.advertise<medlab_motor_control_board::McbEncoders>(topicEncoderCommand.c_str(),1);
@@ -192,6 +196,20 @@ bool McbRos::zeroCurrentPositions(void)
   if(connected_ && isRosControlEnabled()){
     std_msgs::Empty msg;
     pubZeroAll_.publish(msg);
+
+    success = true;
+  }
+
+  return success;
+}
+
+bool McbRos::resetDacs()
+{
+  bool success = false;
+
+  if(connected_){
+    std_msgs::Empty msg;
+    pubResetDacs_.publish(msg);
 
     success = true;
   }
@@ -327,13 +345,18 @@ void McbRos::callbackSubStatus(const medlab_motor_control_board::McbStatus::Cons
   std::string currentStateString = currentStatus_.current_state;
   currentControlState_ = !currentStateString.compare("ROS Control"); // compare() returns 0 if strings are equal
 
+  // update limit switch states
+  for(uint ii=0; ii<getNumMotors(); ii++){
+    currentLimitStates_[ii] = currentStatus_.limit_switch[ii];
+  }
+
   // emit signal if control state has changed
   if(currentControlState_ != previousControlState){
     emit controlStateChanged(currentControlState_);
   }
 
   // emit signal(s) if any motor states have changed
-  for(int ii=0; ii<getNumMotors(); ii++){
+  for(uint ii=0; ii<getNumMotors(); ii++){
     if(currentStatus_.motor_enabled[ii] != previousStatus.motor_enabled[ii]){
       emit motorStateChanged(ii);
     }
