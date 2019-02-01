@@ -19,7 +19,7 @@ Q_DECLARE_METATYPE(std::vector<int32_t>)
 Q_DECLARE_METATYPE(medlab_motor_control_board::McbEncoderCurrent)
 
 namespace mcb {
-// custom types for mapping actuators to individual motors
+// custom type aliases for mapping actuators to individual motors
 using Motor = std::pair<uint8_t,uint8_t>; // pair of < Motherboard_index, Daughterboard_index >
 using MotorMap = std::array< Motor, 7 >;
 
@@ -35,8 +35,11 @@ public:
   std::string nodeName(void) {return nodeName_;}
   void init(std::string nodeName);
   bool isConnected(void);
+  void queueDesiredPosition(uint8_t motor, int desiredPosition); // puts desired positions into a queue, which is not sent until calling setDesiredPosition(void)
+  void flushDesiredPositionQueue();
+  bool setDesiredPosition(void); // publishes all queued desired positions
   bool setDesiredPosition(medlab_motor_control_board::McbEncoders desiredPositions);
-  bool setDesiredPosition(int motor, qint32 position);
+  bool setDesiredPosition(int motor, qint32 desiredPosition);
   medlab_motor_control_board::McbEncoderCurrent currentPositions(void) {return encoderCurrent_;}
   int currentPosition(uint8_t motor) {return encoderCurrent_.measured[motor];} // NOTE: does not check that motor is between 0-5!
   std::array<bool,6> getCurrentLimitStates(void) {return currentLimitStates_;}
@@ -87,6 +90,8 @@ private:
   medlab_motor_control_board::McbStatus currentStatus_; // most recently received status
   medlab_motor_control_board::McbEncoderCurrent encoderCurrent_; // measured and desired positions
   std::array<bool,6> currentLimitStates_;
+  std::array<int,6>  desiredPositionQueue_;
+  std::array<bool,6> desiredPositionQueueState_; // true after a desired position has been queued
 
   void callbackSubEncoderCurrent(const medlab_motor_control_board::McbEncoderCurrent::ConstPtr& msg);
   void callbackSubStatus(const medlab_motor_control_board::McbStatus::ConstPtr& msg);

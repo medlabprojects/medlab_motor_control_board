@@ -174,6 +174,59 @@ bool McbRos::setDesiredPosition(medlab_motor_control_board::McbEncoders desiredP
   pubEncoderCommand_.publish(desiredPositions);
 }
 
+void McbRos::queueDesiredPosition(uint8_t motor, int desiredPosition)
+{
+  if(motor < getNumMotors()){
+    desiredPositionQueue_.at(motor) = desiredPosition;
+    desiredPositionQueueState_.at(motor) = true;
+  }
+}
+
+void McbRos::flushDesiredPositionQueue()
+{
+  desiredPositionQueueState_.fill(false);
+}
+
+bool McbRos::setDesiredPosition()
+{
+  bool success = false;
+
+  // check if the queue is empty
+  bool queueEmpty = true;
+  for(auto& is_set : desiredPositionQueueState_){
+    if(is_set){
+      queueEmpty = false;
+      break;
+    }
+  }
+
+  if(connected_ && !queueEmpty){
+    // initialize message
+    medlab_motor_control_board::McbEncoders msg;
+    msg.count = encoderCurrent_.desired; // ensure we keep others the same
+
+    // set any queued values
+    for(uint ii=0; ii<desiredPositionQueueState_.size(); ii++){
+      if(desiredPositionQueueState_.at(ii)){
+        msg.count[ii] = desiredPositionQueue_.at(ii);
+      }
+    }
+
+    // publish
+    setDesiredPosition(msg);
+
+    // flush queue now that we are done
+    flushDesiredPositionQueue();
+
+    success = true;
+  }
+  else{
+    success = false;
+  }
+
+  return success;
+}
+
 bool McbRos::zeroCurrentPosition(uint8_t motor)
 {
   bool success = false;
@@ -193,7 +246,8 @@ bool McbRos::zeroCurrentPositions(void)
 {
   bool success = false;
 
-  if(connected_ && isRosControlEnabled()){
+//  if(connected_ && isRosControlEnabled()){
+  if(connected_){
     std_msgs::Empty msg;
     pubZeroAll_.publish(msg);
 
