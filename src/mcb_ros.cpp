@@ -33,6 +33,15 @@ McbRos::McbRos()
 
 McbRos::~McbRos()
 {
+  // stop timer
+  statusTimer_.stop();
+
+  // alert user
+//  emit connectionLost();
+
+  // ensure MCB is disabled
+  enableRosControl(false);
+
   // shutdown node
   nh_.shutdown();
 }

@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(medlab_motor_control_board)
 
-#add_definitions(-std=c++14) # use C++14
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -119,15 +118,15 @@ add_dependencies(MotorTestSine
 )
 
 
-add_executable(MCBHelper
-  src/MCBHelper.cpp
-)
-target_link_libraries(MCBHelper
-  ${catkin_LIBRARIES}
-)
-add_dependencies(MCBHelper
-  ${PROJECT_NAME}_generate_messages_cpp
-)
+#add_executable(MCBHelper
+#  src/MCBHelper.cpp
+#)
+#target_link_libraries(MCBHelper
+#  ${catkin_LIBRARIES}
+#)
+#add_dependencies(MCBHelper
+#  ${PROJECT_NAME}_generate_messages_cpp
+#)
 
 
 #############
